@@ -83,12 +83,13 @@
             color: #333;
             margin-bottom: 20px;
             font-size: 18px;
+            text-align: center;
         }
 
         .data-option {
             background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
             padding: 20px;
             margin-bottom: 15px;
             cursor: pointer;
@@ -99,7 +100,7 @@
         .data-option:hover {
             border-color: #667eea;
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.25);
         }
 
         .data-option input[type="radio"] {
@@ -108,37 +109,42 @@
         }
 
         .data-option input[type="radio"]:checked + .data-content {
-            background: #f0f4ff;
+            background: linear-gradient(135deg, #e8eeff 0%, #f0e8ff 100%);
+            border-radius: 10px;
         }
 
-        .data-option input[type="radio"]:checked + .data-content::before {
-            content: "✓";
+        .data-option input[type="radio"]:checked ~ .check-icon {
+            display: block;
+        }
+
+        .check-icon {
+            display: none;
             position: absolute;
             right: 20px;
             top: 50%;
             transform: translateY(-50%);
             color: #667eea;
-            font-size: 24px;
+            font-size: 32px;
             font-weight: bold;
         }
 
         .data-content {
             position: relative;
-            padding: 10px;
-            border-radius: 8px;
+            padding: 15px;
             transition: all 0.3s ease;
         }
 
         .data-dia {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #333;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
         }
 
         .data-hora {
             font-size: 16px;
-            color: #666;
+            color: #667eea;
+            font-weight: 600;
         }
 
         .btn-confirmar {
@@ -231,7 +237,7 @@
 
     <script>
         const CONFIG = {
-            appsScriptUrl: 'https://script.google.com/macros/s/AKfycbw5pDyiPPXgmW9oEsgvIS99oQTQosih1QbFqL2sQ-zt_xcUORUwVYj7ew2WekfJAMWt/exec'
+            appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwnIZNIqPXyNBhmiavP7etkRLydbIB6Wmy3YujFB9NhjtfQedHzz9T2ROqOzZMWb_a4/exec'
         };
 
         let conviteId = null;
@@ -280,7 +286,7 @@
             html += '</div>';
 
             html += '<div class="datas-section">';
-            html += '<h3>Selecione a data que funciona melhor para você:</h3>';
+            html += '<h3>📅 Selecione a data que funciona melhor para você:</h3>';
 
             conviteData.datasOpcionais.forEach(function(opcao, index) {
                 const dataObj = new Date(opcao.data + 'T00:00:00');
@@ -294,13 +300,14 @@
                 html += '<label class="data-option">';
                 html += '<input type="radio" name="dataEscolhida" value="' + index + '">';
                 html += '<div class="data-content">';
-                html += '<div class="data-dia">' + dataFormatada + '</div>';
-                html += '<div class="data-hora">Horário: ' + opcao.horario + '</div>';
+                html += '<div class="data-dia">📆 ' + dataFormatada.charAt(0).toUpperCase() + dataFormatada.slice(1) + '</div>';
+                html += '<div class="data-hora">🕐 Horário: ' + opcao.horario + '</div>';
                 html += '</div>';
+                html += '<span class="check-icon">✓</span>';
                 html += '</label>';
             });
 
-            html += '<button class="btn-confirmar" onclick="confirmarPresenca()">Confirmar Presença</button>';
+            html += '<button class="btn-confirmar" onclick="confirmarPresenca()">✅ Confirmar Presença</button>';
             html += '</div>';
 
             document.getElementById('conteudo').innerHTML = html;
