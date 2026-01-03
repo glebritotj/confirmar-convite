@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar Presença - Sistema de Oradores</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 600px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .convite-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: #333;
+        }
+
+        .datas-section h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .data-option {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .data-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.2);
+        }
+
+        .data-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .data-option input[type="radio"]:checked + .data-content {
+            background: #f0f4ff;
+        }
+
+        .data-option input[type="radio"]:checked + .data-content::before {
+            content: "✓";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .data-content {
+            position: relative;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .data-dia {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .data-hora {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .btn-confirmar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-confirmar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-confirmar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 30px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            color: #856404;
+            text-align: center;
+        }
+
+        .success-message {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            border-radius: 10px;
+            padding: 30px;
+            color: #155724;
+            text-align: center;
+        }
+
+        .success-message h2 {
+            color: #28a745;
+            margin-bottom: 15px;
+            font-size: 24px;
+        }
+
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Confirmar Presença</h1>
+            <p>Sistema de Gerenciamento de Convites</p>
+        </div>
+
+        <div id="conteudo" class="content loading">
+            <div class="spinner"></div>
+            <p>Carregando informações do convite...</p>
+        </div>
+    </div>
+
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script>
+        const CONFIG = {
+            apiKey: 'AIzaSyCwq7F8DMT6wmNZwtzizZz6NYh-36ZpPjA',
+            spreadsheetId: '1ILPZEgrodo_1oIe-36WVs4WNW5oCAef2efn7lBjT3K4'
+        };
+
+        let conviteId = null;
+        let conviteData = null;
+
+        function getConviteIdFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        function carregarGoogleAPI() {
+            gapi.load('client', function() {
+                gapi.client.init({
+                    apiKey: CONFIG.apiKey,
+                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
+                }).then(function() {
+                    carregarConvite();
+                }).catch(function(error) {
+                    mostrarErro('Erro ao conectar com o servidor. Tente novamente mais tarde.');
+                    console.error(error);
+                });
+            });
+        }
+
+        function carregarConvite() {
+            conviteId = getConviteIdFromUrl();
+            
+            if (!conviteId) {
+                mostrarErro('Link inválido. Verifique se copiou o link completo.');
+                return;
+            }
+
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: CONFIG.spreadsheetId,
+                range: 'Convites!A:S'
+            }).then(function(response) {
+                const rows = response.result.values;
+                
+                if (!rows || rows.length < 2) {
+                    mostrarErro('Convite não encontrado.');
+                    return;
+                }
+
+                for (let i = 1; i < rows.length; i++) {
+                    if (rows[i][0] === conviteId) {
+                        conviteData = {
+                            id: rows[i][0],
+                            tipo: rows[i][1],
+                            orador: rows[i][2],
+                            tema: rows[i][3],
+                            datasOpcionais: rows[i][7] ? JSON.parse(rows[i][7]) : [],
+                            dataConfirmada: rows[i][8] ? JSON.parse(rows[i][8]) : null,
+                            status: rows[i][10],
+                            rowIndex: i + 1
+                        };
+                        break;
+                    }
+                }
+
+                if (!conviteData) {
+                    mostrarErro('Convite não encontrado no sistema.');
+                    return;
+                }
+
+                if (conviteData.dataConfirmada) {
+                    mostrarJaConfirmado();
+                    return;
+                }
+
+                renderizarFormulario();
+            }).catch(function(error) {
+                mostrarErro('Erro ao carregar convite. Tente novamente.');
+                console.error(error);
+            });
+        }
+
+        function renderizarFormulario() {
+            let html = '<div class="convite-info">';
+            html += '<div class="info-row"><span class="info-label">Orador:</span><span class="info-value">' + conviteData.orador + '</span></div>';
+            html += '<div class="info-row"><span class="info-label">Tema:</span><span class="info-value">' + conviteData.tema + '</span></div>';
+            html += '</div>';
+
+            html += '<div class="datas-section">';
+            html += '<h3>Selecione a data que funciona melhor para você:</h3>';
+
+            conviteData.datasOpcionais.forEach(function(opcao, index) {
+                const dataObj = new Date(opcao.data + 'T00:00:00');
+                const dataFormatada = dataObj.toLocaleDateString('pt-BR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+
+                html += '<label class="data-option">';
+                html += '<input type="radio" name="dataEscolhida" value="' + index + '">';
+                html += '<div class="data-content">';
+                html += '<div class="data-dia">' + dataFormatada + '</div>';
+                html += '<div class="data-hora">Horário: ' + opcao.horario + '</div>';
+                html += '</div>';
+                html += '</label>';
+            });
+
+            html += '<button class="btn-confirmar" onclick="confirmarPresenca()">Confirmar Presença</button>';
+            html += '</div>';
+
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        function confirmarPresenca() {
+            const selected = document.querySelector('input[name="dataEscolhida"]:checked');
+            
+            if (!selected) {
+                alert('Por favor, selecione uma data.');
+                return;
+            }
+
+            const btn = document.querySelector('.btn-confirmar');
+            btn.disabled = true;
+            btn.textContent = 'Confirmando...';
+
+            const indexEscolhido = parseInt(selected.value);
+            const dataEscolhida = conviteData.datasOpcionais[indexEscolhido];
+
+            gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: CONFIG.spreadsheetId,
+                range: 'Convites!A:S'
+            }).then(function(response) {
+                const rows = response.result.values;
+                const rowToUpdate = conviteData.rowIndex;
+
+                const updateRange = 'Convites!I' + rowToUpdate + ':K' + rowToUpdate;
+                const values = [[
+                    JSON.stringify(dataEscolhida),
+                    '',
+                    'Confirmado'
+                ]];
+
+                return gapi.client.sheets.spreadsheets.values.update({
+                    spreadsheetId: CONFIG.spreadsheetId,
+                    range: updateRange,
+                    valueInputOption: 'RAW',
+                    resource: { values: values }
+                });
+            }).then(function() {
+                mostrarSucesso(dataEscolhida);
+            }).catch(function(error) {
+                alert('Erro ao confirmar. Tente novamente.');
+                btn.disabled = false;
+                btn.textContent = 'Confirmar Presença';
+                console.error(error);
+            });
+        }
+
+        function mostrarSucesso(dataEscolhida) {
+            const dataObj = new Date(dataEscolhida.data + 'T00:00:00');
+            const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const html = '<div class="success-message">' +
+                '<div class="success-icon">✓</div>' +
+                '<h2>Presença Confirmada!</h2>' +
+                '<p style="font-size: 16px; margin-top: 15px;">Sua presença foi confirmada para:</p>' +
+                '<p style="font-size: 20px; font-weight: bold; margin-top: 10px; color: #28a745;">' + 
+                dataFormatada + '</p>' +
+                '<p style="font-size: 18px; margin-top: 5px; color: #28a745;">às ' + dataEscolhida.horario + '</p>' +
+                '<p style="margin-top: 20px; color: #666;">Você receberá um lembrete antes da data.</p>' +
+                '<p style="margin-top: 10px; color: #666;">Obrigado!</p>' +
+                '</div>';
+
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        function mostrarJaConfirmado() {
+            const dataConfirmada = conviteData.dataConfirmada;
+            const dataObj = new Date(dataConfirmada.data + 'T00:00:00');
+            const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            const html = '<div class="success-message">' +
+                '<div class="success-icon">✓</div>' +
+                '<h2>Já Confirmado</h2>' +
+                '<p style="font-size: 16px; margin-top: 15px;">Você já confirmou presença para:</p>' +
+                '<p style="font-size: 20px; font-weight: bold; margin-top: 10px; color: #28a745;">' + 
+                dataFormatada + '</p>' +
+                '<p style="font-size: 18px; margin-top: 5px; color: #28a745;">às ' + dataConfirmada.horario + '</p>' +
+                '</div>';
+
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        function mostrarErro(mensagem) {
+            const html = '<div class="error-message">' +
+                '<h3 style="margin-bottom: 10px;">Ops!</h3>' +
+                '<p>' + mensagem + '</p>' +
+                '</div>';
+
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        carregarGoogleAPI();
+    </script>
+</body>
+</html>
