@@ -229,11 +229,9 @@
         </div>
     </div>
 
-    <script src="https://apis.google.com/js/api.js"></script>
     <script>
         const CONFIG = {
-            apiKey: 'AIzaSyCwq7F8DMT6wmNZwtzizZz6NYh-36ZpPjA',
-            spreadsheetId: '1ILPZEgrodo_1oIe-36WVs4WNW5oCAef2efn7lBjT3K4'
+            appsScriptUrl: 'https://script.google.com/macros/s/AKfycbw5pDyiPPXgmW9oEsgvIS99oQTQosih1QbFqL2sQ-zt_xcUORUwVYj7ew2WekfJAMWt/exec'
         };
 
         let conviteId = null;
@@ -244,20 +242,6 @@
             return params.get('id');
         }
 
-        function carregarGoogleAPI() {
-            gapi.load('client', function() {
-                gapi.client.init({
-                    apiKey: CONFIG.apiKey,
-                    discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4']
-                }).then(function() {
-                    carregarConvite();
-                }).catch(function(error) {
-                    mostrarErro('Erro ao conectar com o servidor. Tente novamente mais tarde.');
-                    console.error(error);
-                });
-            });
-        }
-
         function carregarConvite() {
             conviteId = getConviteIdFromUrl();
             
@@ -266,53 +250,32 @@
                 return;
             }
 
-            gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: CONFIG.spreadsheetId,
-                range: 'Convites!A:S'
-            }).then(function(response) {
-                const rows = response.result.values;
-                
-                if (!rows || rows.length < 2) {
-                    mostrarErro('Convite não encontrado.');
-                    return;
-                }
-
-                for (let i = 1; i < rows.length; i++) {
-                    if (rows[i][0] === conviteId) {
-                        conviteData = {
-                            id: rows[i][0],
-                            tipo: rows[i][1],
-                            orador: rows[i][2],
-                            tema: rows[i][3],
-                            datasOpcionais: rows[i][7] ? JSON.parse(rows[i][7]) : [],
-                            dataConfirmada: rows[i][8] ? JSON.parse(rows[i][8]) : null,
-                            status: rows[i][10],
-                            rowIndex: i + 1
-                        };
-                        break;
+            fetch(CONFIG.appsScriptUrl + '?action=getConvite&id=' + conviteId)
+                .then(function(response) { return response.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        mostrarErro(data.error);
+                        return;
                     }
-                }
+                    
+                    conviteData = data.convite;
+                    
+                    if (conviteData.status === 'Confirmado') {
+                        mostrarJaConfirmado();
+                        return;
+                    }
 
-                if (!conviteData) {
-                    mostrarErro('Convite não encontrado no sistema.');
-                    return;
-                }
-
-                if (conviteData.dataConfirmada) {
-                    mostrarJaConfirmado();
-                    return;
-                }
-
-                renderizarFormulario();
-            }).catch(function(error) {
-                mostrarErro('Erro ao carregar convite. Tente novamente.');
-                console.error(error);
-            });
+                    mostrarFormulario();
+                })
+                .catch(function(error) {
+                    mostrarErro('Erro ao carregar convite. Tente novamente.');
+                    console.error(error);
+                });
         }
 
-        function renderizarFormulario() {
+        function mostrarFormulario() {
             let html = '<div class="convite-info">';
-            html += '<div class="info-row"><span class="info-label">Orador:</span><span class="info-value">' + conviteData.orador + '</span></div>';
+            html += '<div class="info-row"><span class="info-label">Orador:</span><span class="info-value">' + conviteData.nomeOrador + '</span></div>';
             html += '<div class="info-row"><span class="info-label">Tema:</span><span class="info-value">' + conviteData.tema + '</span></div>';
             html += '</div>';
 
@@ -358,29 +321,26 @@
             const indexEscolhido = parseInt(selected.value);
             const dataEscolhida = conviteData.datasOpcionais[indexEscolhido];
 
-            gapi.client.sheets.spreadsheets.values.get({
-                spreadsheetId: CONFIG.spreadsheetId,
-                range: 'Convites!A:S'
-            }).then(function(response) {
-                const rows = response.result.values;
-                const rowToUpdate = conviteData.rowIndex;
-
-                const updateRange = 'Convites!I' + rowToUpdate + ':K' + rowToUpdate;
-                const values = [[
-                    JSON.stringify(dataEscolhida),
-                    '',
-                    'Confirmado'
-                ]];
-
-                return gapi.client.sheets.spreadsheets.values.update({
-                    spreadsheetId: CONFIG.spreadsheetId,
-                    range: updateRange,
-                    valueInputOption: 'RAW',
-                    resource: { values: values }
-                });
-            }).then(function() {
+            fetch(CONFIG.appsScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'confirmarPresenca',
+                    conviteId: conviteData.id,
+                    dataEscolhida: dataEscolhida,
+                    rowIndex: conviteData.rowIndex
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    alert('Erro ao confirmar: ' + data.error);
+                    btn.disabled = false;
+                    btn.textContent = 'Confirmar Presença';
+                    return;
+                }
                 mostrarSucesso(dataEscolhida);
-            }).catch(function(error) {
+            })
+            .catch(function(error) {
                 alert('Erro ao confirmar. Tente novamente.');
                 btn.disabled = false;
                 btn.textContent = 'Confirmar Presença';
@@ -442,7 +402,7 @@
             document.getElementById('conteudo').innerHTML = html;
         }
 
-        carregarGoogleAPI();
+        carregarConvite();
     </script>
 </body>
 </html>
