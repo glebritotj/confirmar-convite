@@ -172,6 +172,38 @@
             transform: none;
         }
 
+        .btn-recusar {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-recusar:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-recusar:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
         .loading {
             text-align: center;
             padding: 60px 30px;
@@ -307,7 +339,10 @@
                 html += '</label>';
             });
 
+            html += '<div class="btn-group">';
             html += '<button class="btn-confirmar" onclick="confirmarPresenca()">✅ Confirmar Presença</button>';
+            html += '<button class="btn-recusar" onclick="recusarConvite()">❌ Não Posso Comparecer</button>';
+            html += '</div>';
             html += '</div>';
 
             document.getElementById('conteudo').innerHTML = html;
@@ -355,6 +390,45 @@
             });
         }
 
+        function recusarConvite() {
+            if (!confirm('Tem certeza que não pode comparecer em nenhuma das datas disponíveis?')) {
+                return;
+            }
+
+            const btnConfirmar = document.querySelector('.btn-confirmar');
+            const btnRecusar = document.querySelector('.btn-recusar');
+            btnConfirmar.disabled = true;
+            btnRecusar.disabled = true;
+            btnRecusar.textContent = 'Processando...';
+
+            fetch(CONFIG.appsScriptUrl, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'recusarConvite',
+                    conviteId: conviteData.id,
+                    rowIndex: conviteData.rowIndex
+                })
+            })
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    alert('Erro ao processar: ' + data.error);
+                    btnConfirmar.disabled = false;
+                    btnRecusar.disabled = false;
+                    btnRecusar.textContent = '❌ Não Posso Comparecer';
+                    return;
+                }
+                mostrarRecusado();
+            })
+            .catch(function(error) {
+                alert('Erro ao processar. Tente novamente.');
+                btnConfirmar.disabled = false;
+                btnRecusar.disabled = false;
+                btnRecusar.textContent = '❌ Não Posso Comparecer';
+                console.error(error);
+            });
+        }
+
         function mostrarSucesso(dataEscolhida) {
             const dataObj = new Date(dataEscolhida.data + 'T00:00:00');
             const dataFormatada = dataObj.toLocaleDateString('pt-BR', {
@@ -395,6 +469,18 @@
                 '<p style="font-size: 20px; font-weight: bold; margin-top: 10px; color: #28a745;">' + 
                 dataFormatada + '</p>' +
                 '<p style="font-size: 18px; margin-top: 5px; color: #28a745;">às ' + dataConfirmada.horario + '</p>' +
+                '</div>';
+
+            document.getElementById('conteudo').innerHTML = html;
+        }
+
+        function mostrarRecusado() {
+            const html = '<div class="error-message" style="background: #f8d7da; border-color: #e74c3c; color: #721c24;">' +
+                '<div style="font-size: 60px; margin-bottom: 20px;">😔</div>' +
+                '<h2 style="color: #c0392b; margin-bottom: 15px; font-size: 24px;">Convite Recusado</h2>' +
+                '<p style="font-size: 16px; margin-top: 15px;">Recebemos sua resposta informando que não poderá comparecer.</p>' +
+                '<p style="margin-top: 20px;">O responsável pelos convites foi notificado.</p>' +
+                '<p style="margin-top: 10px;">Obrigado pela resposta!</p>' +
                 '</div>';
 
             document.getElementById('conteudo').innerHTML = html;
