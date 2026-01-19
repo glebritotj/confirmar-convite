@@ -321,7 +321,9 @@
             html += '<h3>📅 Selecione a data que funciona melhor para você:</h3>';
 
             conviteData.datasOpcionais.forEach(function(opcao, index) {
-                const dataObj = new Date(opcao.data + 'T00:00:00');
+                // Forçar interpretação como data local (sem conversão de timezone)
+                const [ano, mes, dia] = opcao.data.split('-');
+                const dataObj = new Date(parseInt(ano), parseInt(mes) - 1, parseInt(dia));
                 const dataFormatada = dataObj.toLocaleDateString('pt-BR', { 
                     weekday: 'long', 
                     year: 'numeric', 
